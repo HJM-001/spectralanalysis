@@ -1,0 +1,319 @@
+#ifndef _GEOMETRY_
+#define _GEOMETRY_
+#include"HBASE"
+#include<cmath>
+
+
+//声明///////////////////////////////
+
+class GEO{
+public:
+	static	REAL vec_length(REAL *c);							//向量长
+	static	REAL vert_dist(REAL *u, REAL *v);  					// 三维空间中两点距
+	static	void cross_product(REAL* u, REAL* v, REAL* norm); 	// 叉积
+	static	void tri_normal(REAL* v1, REAL* v2, REAL* v3, REAL *norm);  //三角形法向；最后一个参数是传送了地址
+	static	void unit_vector(REAL *v, REAL *n);					//在n中返回单位向量
+	static	void unitized(REAL *v);								//原地单位化
+	static	REAL tri_area(REAL* v1, REAL* v2, REAL* v3); 		// 三角形面积
+	static	REAL vert_line_dist(REAL* p,REAL* end1,REAL* end2); //点到直线距离
+	static	REAL dot_product(REAL* u, REAL* v); 				// 两向量的点积	
+	static	void scale(REAL t,REAL* u);                     	// 数与向量的乘积,结果通过原向量返回
+	static	void scale(REAL t,REAL* u, REAL* result);
+	static	void add(REAL* u, REAL* v, REAL* s);          		// 两向量的和,结果通过后一个参数返回
+	static	void foot_of_perpendicular(REAL* p, REAL* end1, REAL* end2, REAL* result);  //点到直线的垂足
+	static	bool is_vert_in_seg(REAL* p, REAL* a, REAL* b);     //p是否在线段ab上？ 假定三点共线
+	static	void sym_about_plane(REAL* p, REAL* N, REAL* foot,REAL* sym);  //求点p关于平面的对称点,N平面法向,foot平面上一点，由sym返回
+	static	void foot_on_plane(REAL* p, REAL* N, REAL* anchor,REAL* foot);//求点p关于平面的垂足,N平面法向,anchor,平面上一点，由foot返回
+	static	void line_intersection(REAL* a,REAL* b,REAL* c,REAL* d,REAL* sec);//求共面两线ab、cd交点
+	static	void sym_about_line(REAL* p, REAL* end1, REAL* end2,REAL* sym);//求点p关于直线的对称点,结果由sym返回
+	static	bool is_on_same_side_of_plane(REAL* p,REAL* q,REAL* a,REAL* b,REAL* c); // 两点p和q在平面abc的同侧? 假定p,q都不在面上
+	static	void line_plane_intersection(REAL* p,REAL* q,REAL* a,REAL* b,REAL* c,REAL* intsect); //直线pq与平面abc的交点,调用时确保相交
+	static	int p_is_in_tri( REAL* p,REAL* a, REAL* b, REAL* c);//确保p与abc共面。返回值-1,0,1分别表示三角形退化、不在，在
+	static bool is_Coplanar_4_points(REAL* p,REAL* a, REAL* b, REAL* c); //4点共面
+};
+
+
+
+//几何计算//////////////////////
+inline REAL GEO::vec_length(REAL *c)
+{
+	return sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2]);	
+}
+
+inline REAL vert_dist(REAL *u, REAL *v)
+{
+	REAL c[3];
+	c[0]=u[0]-v[0];
+	c[1]=u[1]-v[1];
+	c[2]=u[2]-v[2];
+	return sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2]);	
+}
+
+inline void GEO::cross_product(REAL* u, REAL* v, REAL* norm)
+{
+	norm[0]=u[1]*v[2]-u[2]*v[1];
+	norm[1]=u[2]*v[0]-u[0]*v[2];
+	norm[2]=u[0]*v[1]-u[1]*v[0];
+}
+
+inline void GEO::tri_normal(REAL* v1, REAL* v2, REAL* v3, REAL *norm)//最后一个参数其实就是传送了地址
+{
+	REAL u[3],v[3];
+	u[0]=v2[0]-v1[0];
+	u[1]=v2[1]-v1[1];
+	u[2]=v2[2]-v1[2];
+	v[0]=v3[0]-v1[0];
+	v[1]=v3[1]-v1[1];
+	v[2]=v3[2]-v1[2];
+	cross_product(u,v,norm);
+}
+
+inline void GEO::unit_vector(REAL *v, REAL *n)		//在n中返回单位向量
+{
+	REAL lenth=sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	n[0]=v[0]/lenth;
+	n[1]=v[1]/lenth;
+	n[2]=v[2]/lenth;
+}
+
+inline void GEO::unitized( REAL *v)		//在n中返回单位向量
+{
+	REAL lenth=sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	v[0]=v[0]/lenth;
+	v[1]=v[1]/lenth;
+	v[2]=v[2]/lenth;
+}
+
+inline REAL GEO::tri_area(REAL* v1, REAL* v2, REAL* v3)
+{
+	REAL norm[3];
+	tri_normal(v1,v2,v3,norm);
+	return 0.5*sqrt(norm[0]*norm[0] + norm[1]*norm[1] + norm[2]*norm[2]);
+}
+
+inline REAL GEO::vert_line_dist(REAL* p, REAL* end1, REAL* end2) //点到直线距离，直线用两点描述
+{
+	return 2*tri_area(p,end1,end2)/vert_dist(end1,end2);
+}
+
+inline REAL GEO::dot_product(REAL* u, REAL* v)
+{
+	return u[0]*v[0]+u[1]*v[1]+u[2]*v[2];
+}
+
+inline void GEO::scale(REAL t,REAL* u)  // 数的向量的乘积,结果通过原向量返回
+{
+	u[0]=u[0]*t;
+	u[1]=u[1]*t;
+	u[2]=u[2]*t;	
+}
+
+inline void GEO::scale(REAL t,REAL* u, REAL* result)  // 数的向量的乘积,结果最后的参数返回
+{
+	result[0]=u[0]*t;
+	result[1]=u[1]*t;
+	result[2]=u[2]*t;	
+}
+
+inline void GEO::add(REAL* u, REAL* v, REAL* s) // 两向量的和,结果通过后一个参数返回
+{
+ 	s[0]=u[0]+v[0];
+ 	s[1]=u[1]+v[1];
+ 	s[2]=u[2]+v[2];
+}
+
+inline void GEO::foot_of_perpendicular(REAL* p, REAL* end1, REAL* end2, REAL* result)//点到直线的垂足
+{
+	REAL u[3],v[3];
+	u[0]=p[0]-end1[0];	
+	u[1]=p[1]-end1[1];	
+	u[2]=p[2]-end1[2];	
+	v[0]=end2[0]-end1[0];	
+	v[1]=end2[1]-end1[1];	
+	v[2]=end2[2]-end1[2];
+	
+	REAL t=dot_product(v,u)/dot_product(v,v);
+	scale(1-t,end1,u);
+	scale(t,  end2,v);
+	add(u,v,result);
+}
+
+inline bool GEO::is_vert_in_seg(REAL* p, REAL* a, REAL* b) //p是否在线段ab上？ 调用者要确保三点共线
+{
+	REAL u[3];
+	u[0]=p[0]-a[0];	
+	u[1]=p[1]-a[1];	
+	u[2]=p[2]-a[2];	
+	REAL ap=dot_product(u,u);	
+	
+	u[0]=p[0]-b[0];	
+	u[1]=p[1]-b[1];	
+	u[2]=p[2]-b[2];
+	REAL pb=dot_product(u,u);	
+	
+	u[0]=b[0]-a[0];	
+	u[1]=b[1]-a[1];	
+	u[2]=b[2]-a[2];	
+	REAL ab=dot_product(u,u);
+	
+	return (ap + pb <= ab);  
+}
+
+inline void GEO::sym_about_plane(REAL* p, REAL* N, REAL* foot,REAL* sym)//求点p关于平面的对称点,N平面法向,foot,平面上一点，结果由sym返回
+{
+	REAL pf[3];
+	pf[0]=p[0]-foot[0];	
+	pf[1]=p[1]-foot[1];	
+	pf[2]=p[2]-foot[2];	
+	REAL t=2*dot_product(pf,N)/dot_product(N,N);
+	
+	scale(-t,N,pf);
+	add(p,pf,sym);
+}
+
+inline void GEO::foot_on_plane(REAL* p, REAL* N, REAL* anchor,REAL* foot)//求点p关于平面的垂足,N平面法向,anchor,平面上一点，结果由foot返回
+{
+	REAL sym[3];
+	sym_about_plane(p,N,anchor,sym);
+	add(p,sym,foot); 
+	scale(0.5,foot);
+}
+
+inline void GEO::line_intersection(REAL* a,REAL* b,REAL* c,REAL* d,REAL* sec)//求共面两线ab、cd交点
+{
+//  下面是计算公式
+//	根据 sec=(1-t)*c+t*d，以及(sec-a)cross(sec-b)=0，解出
+//  t=norm(cross(a,b)-cross(a-b,c)) /  norm(cross(a-b,d-c));
+//	(1-t)*c+t*d;
+
+	REAL t,O[3]={0,0,0};
+	REAL asb[3],dsc[3],minus[3],c_ab[3],c_abc[3],c_abdc[3],substr[3];
+	
+	scale(-1,b,minus);
+	add(a,minus,asb); 
+
+	scale(-1,c,minus);
+	add(d,minus,dsc);
+
+	cross_product(a,b,c_ab);
+	cross_product(asb,c,c_abc);
+	cross_product(asb,dsc,c_abdc);
+
+	scale(-1,c_abc,minus);
+	add(c_ab,minus,substr);
+
+	t=vert_dist(O,substr)/vert_dist(O,c_abdc);
+	
+	scale(1-t,c,minus);
+	scale(t,d,O);
+	add(minus,O,sec);
+}
+
+inline void GEO::sym_about_line(REAL* p, REAL* end1, REAL* end2,REAL* sym)//求点p关于直线的对称点,结果由sym返回
+{
+	REAL foot[3],temp[3];
+	foot_of_perpendicular(p,end1,end2,foot);
+	scale(2,foot);
+	scale(-1,p,temp);
+	add(foot,temp,sym); 
+}
+
+inline bool GEO::is_on_same_side_of_plane(REAL* p,REAL* q,REAL* a,REAL* b,REAL* c) // 判断两点p和q,是否在平面的同侧，a,b,c是平面上的三点, 假定点都不在面上
+{
+	REAL n[3],t,s,d;
+	tri_normal(a,b,c,n);
+	d=dot_product(a,n);
+	t=dot_product(p,n)-d;
+	s=dot_product(q,n)-d;
+	return (t*s>0);
+}
+
+inline void GEO::line_plane_intersection(REAL* p,REAL* q,REAL* a,REAL* b,REAL* c,REAL* intsect) //直线pq与平面abc的交点
+{
+	REAL n[3],ap[3],qp[3],v1[3],v2[3];
+	tri_normal(a,b,c,n);
+	ap[0]=a[0]-p[0];
+	ap[1]=a[1]-p[1];
+	ap[2]=a[2]-p[2];
+	
+	qp[0]=q[0]-p[0];
+	qp[1]=q[1]-p[1];
+	qp[2]=q[2]-p[2];
+	REAL t=dot_product(n,ap)/dot_product(n,qp);
+	scale(1-t,p,v1);
+	scale(t,q,v2);
+	add(v1,v2,intsect);	
+}
+
+inline int GEO::p_is_in_tri( REAL* p,REAL* a, REAL* b, REAL* c)//前提：p必须与abc共面。返回值-1,0,1分别表示三角形退化、不在，在
+{
+    REAL     u[3], v[3], n[3],w[3];      // triangle vectors
+
+    // get triangle edge vectors and plane normal
+    u[0]=b[0]-a[0];
+    u[1]=b[1]-a[1];
+    u[2]=b[2]-a[2];
+	
+	v[0]=c[0]-a[0];
+	v[1]=c[1]-a[1];
+	v[2]=c[2]-a[2];
+
+	cross_product(u,v,n);
+            
+    if (fabs(n[0])<MyEPS && fabs(n[1])<MyEPS && fabs(n[2])<MyEPS)            // triangle is degenerate
+        return -1;                 // do not deal with this case
+
+
+    // is p inside Tri?
+    REAL    uu, uv, vv, wu, wv, D;
+    uu = dot_product(u,u);
+    uv = dot_product(u,v);
+    vv = dot_product(v,v);
+
+    w[0]=p[0]-a[0];
+    w[1]=p[1]-a[1];
+    w[2]=p[2]-a[2];
+
+    wu = dot_product(w,u);
+    wv = dot_product(w,v);
+    D = uv * uv - uu * vv;
+
+    // get and test parametric coords
+    REAL s, t;
+    s = (uv * wv - vv * wu) / D;
+    if (s < 0.0 || s > 1.0)        // I is outside T
+        return 0;
+    t = (uv * wu - uu * wv) / D;
+    if (t < 0.0 || (s + t) > 1.0)  // I is outside T
+        return 0;
+
+    return 1;                      // I is in T
+}
+
+inline bool GEO::is_Coplanar_4_points(REAL* a, REAL* b, REAL* c,REAL* d) //4点共面
+{
+	REAL DA[3],DB[3],DC[3];
+	DA[0]=d[0]-a[0];
+	DA[1]=d[1]-a[1];
+	DA[2]=d[2]-a[2];
+
+	DB[0]=d[0]-b[0];
+	DB[1]=d[1]-b[1];
+	DB[2]=d[2]-b[2];
+
+	DC[0]=d[0]-c[0];
+	DC[1]=d[1]-c[1];
+	DC[2]=d[2]-c[2];
+
+	REAL Det=		DA[0]*DB[1]*DC[2]
+				+	DA[1]*DB[2]*DC[0]
+				+	DA[2]*DB[0]*DC[1]
+				-	DA[2]*DB[1]*DC[0]
+				-	DA[1]*DB[0]*DC[2]
+				-	DA[0]*DB[2]*DC[1];
+	return MyEQ(Det,0.0);
+}
+
+
+#endif
+

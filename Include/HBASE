@@ -1,0 +1,53 @@
+#ifndef _BASE_HJM_
+#define _BASE_HJM_
+
+#define DOUBLE_PRECISION  
+
+#ifdef DOUBLE_PRECISION
+	typedef double REAL;
+#else
+	typedef float REAL;
+#endif
+
+const REAL PI= 		3.14159265358979323846264338327950;
+const REAL MyEPS=	1e-10;
+const REAL INF=		3.402823466e+38F;
+
+
+
+
+#define MAX3(a,b,c) (((a)>(b))?(((a)>(c))?(a):(c)):(((b)>(c))?(b):(c)))
+#define MIN3(a,b,c) (((a)<(b))?(((a)<(c))?(a):(c)):(((b)<(c))?(b):(c)))
+#define MAX(a,b) (((a)>(b)) ? (a) : (b))
+#define MIN(a,b) (((a)<(b)) ? (a) : (b))
+#define MyEQ(a,b) fabs((a)-(b))<MyEPS
+
+
+// 把三个T的对象按由小到大的顺序排列(假定类T中有<,若没有应重载)
+// 调用方式：先定义 T* pT[3],以pT作为第四个参数 
+template<typename T>
+void small_to_large(T& a, T& b,T& c,T** pT)
+{
+	if(a<b) //a b
+	{
+		if(b<c) // a b c
+		{pT[0]=&a;pT[1]=&b;pT[2]=&c;}
+		else if(a<c) //a c b
+		{pT[0]=&a;pT[1]=&c;pT[2]=&b;}
+		else //c a b
+		{pT[0]=&c;pT[1]=&a;pT[2]=&b;}
+	}
+	else   // b a
+	{
+		if(a<c) // b a c
+		{pT[0]=&b;pT[1]=&a;pT[2]=&c;}
+		else if(b<c) //b c a
+		{pT[0]=&b;pT[1]=&c;pT[2]=&a;}
+		else //c b a
+		{pT[0]=&c;pT[1]=&b;pT[2]=&a;}	
+	}
+}
+#endif
+
+
+
